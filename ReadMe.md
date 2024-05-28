@@ -149,9 +149,13 @@ def diagnose(cls_set, cls_list):
 
 
 Valid input diagnosis
+
 |Condition|	Diagnosis|
 |---|---|
 | If "CLV" in cls_list and "CAPV" in cls_list:| Abnormal: CLP|
 | If "CLV" not in cls_list and "CAPV" in cls_list:| Normal: Normal|
 | If "CLV" in cls_list and "CAPV" not in cls_list:| Abnormal: CL|
 | If "CLV" not in cls_list and "CAPV" not in cls_list:| Normal: Normal|
+
+
+

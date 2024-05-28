@@ -2,7 +2,9 @@
 __pycache__
 
 # test sample
-alfyyy-yc-bqx-24w
-
+test_sample
 # model files
 *.onnx
+
+# test sample
+static

@@ -1,10 +1,16 @@
 # %%
+import base64
+from io import BytesIO
 import cv2
 import json
 import onnxruntime
 import numpy as np
 import torch
-from utils import batched_nms_rotated,nms_rotated,trans_result_with_angle_mod,get_retangle_boxes_mod
+from PIL import Image
+
+from utils import batched_nms_rotated, nms_rotated, trans_result_with_angle_mod, get_retangle_boxes_mod
+
+
 # %%
 # 鼻唇冠状切面：normal lip view（NLV）
 # 上牙槽切面： normal alveolar and palate view (NAPV)
@@ -30,7 +36,7 @@ def get_model(model_path, is_cuda=True):
             model_path, providers=['CUDAExecutionProvider', 'CPUExecutionProvider'])
         print("##################load model in gpu")
     else:
-        model = onnxruntime.InferenceSession(model_path,providers=['CPUExecutionProvider'])
+        model = onnxruntime.InferenceSession(model_path, providers=['CPUExecutionProvider'])
         print("###################load model in cpu")
     return model
 
@@ -38,7 +44,7 @@ def get_model(model_path, is_cuda=True):
 # %% 切面分类模型
 class SpClsInferModule:
     def __init__(self, ) -> None:
-        model_path="/home/weki/clp/models/cls_cel4.onnx"
+        model_path = "/home/weki/clp/models/cls_cel4.onnx"
         self.models = get_model(model_path)
 
     def center_crop(self, img, output_size):
@@ -71,38 +77,41 @@ class SpClsInferModule:
 
     def preprocess(self, img):
         img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
-        img = cv2.resize(img, (256,256), interpolation=cv2.INTER_CUBIC)    
-        img = self.center_crop(img, (224,224))
-        img = (img/255.)
-        mean_ary = np.array([0.485, 0.456, 0.406])#.reshape(1,1,3)
-        std_ary = np.array([0.229, 0.224, 0.225])#.reshape(1,1,3)
-        img = (img -  mean_ary)/std_ary
-        img = np.transpose(img,(2,0,1))
-        img = img[np.newaxis,::].astype(np.float32)
+        img = cv2.resize(img, (256, 256), interpolation=cv2.INTER_CUBIC)
+        img = self.center_crop(img, (224, 224))
+        img = (img / 255.)
+        mean_ary = np.array([0.485, 0.456, 0.406])  # .reshape(1,1,3)
+        std_ary = np.array([0.229, 0.224, 0.225])  # .reshape(1,1,3)
+        img = (img - mean_ary) / std_ary
+        img = np.transpose(img, (2, 0, 1))
+        img = img[np.newaxis, ::].astype(np.float32)
         return img
-    
+
     def process(self, image_path) -> dict:
-        img=cv2.imread(image_path)
+        img = cv2.imread(image_path)
         img = self.preprocess(img)
-        outputs = self.models.run(None,{"input": img}) 
-        outputs = torch.as_tensor(np.array(outputs), dtype=torch.float32).reshape(-1) # n
-        outputs =  torch.softmax(outputs, dim=0)
+        outputs = self.models.run(None, {"input": img})
+        outputs = torch.as_tensor(np.array(outputs), dtype=torch.float32).reshape(-1)  # n
+        outputs = torch.softmax(outputs, dim=0)
         sp_scores, sp_classes = outputs.topk(1)
         sp_scores, sp_classes = sp_scores.tolist(), sp_classes.tolist()
         sp_class = cls_map[sp_classes[0]] if sp_classes[0] in cls_map else "unk"
-        sp_score=sp_scores[0]
+        sp_score = sp_scores[0]
         return {'sp_score': sp_score, 'sp_classe': sp_class}
-    
-    def process_batch(self,image_paths):
-        results=[]
+
+    def process_batch(self, image_paths):
+        results = []
         for image in image_paths:
-            result=self.process(image)
-            results.append((result["sp_classe"],result["sp_score"]))
+            result = self.process(image)
+            # sp_score保留3位小数
+            results.append((result["sp_classe"], round(result["sp_score"], 3)))
         return results
 
 
 # %% 切面分类映射表
-cls_map={0:"NAPV",1:"NLV",2:"CLV",3:"CAPV"}
+cls_map = {0: "NAPV", 1: "NLV", 2: "CLV", 3: "CAPV"}
+
+
 # # %% 分类模型测试
 # cls_model=SpClsInferModule()
 # print(cls_model.process("/data/lr/prenatal_project_py/gen/clp_val/image_level_inner_test/val_normal/上牙槽突切面/FT-1st_M3_20200627092817_13_1_60.png"))
@@ -110,9 +119,9 @@ cls_map={0:"NAPV",1:"NLV",2:"CLV",3:"CAPV"}
 # %%
 class DetInferModule:
     def __init__(self, ) -> None:
-        model_path="/home/weki/clp/models/det_211.onnx"
+        model_path = "/home/weki/clp/models/det_211.onnx"
         self.model = get_model(model_path)
-        self.conf_thres = 0.3  
+        self.conf_thres = 0.3
         self.nms_thres = 0.3
         self.batch_size = 1
         self.input_size = (480, 480)
@@ -190,7 +199,7 @@ class DetInferModule:
                 continue
             # Get score and class with highest confidence
             class_conf, class_pred = torch.max(image_pred[:,
-                                                          8:8 + num_classes],
+                                               8:8 + num_classes],
                                                1,
                                                keepdim=True)
 
@@ -236,10 +245,9 @@ class DetInferModule:
         bboxes = output[:, :4]
         bboxes /= ratio
 
-
         output = torch.hstack((bboxes, cls_conf, cls_pred_glide_3))
-        conf_mask = (output[:, 4]  >= conf_thre*1.5).squeeze()
-        output = output[conf_mask].reshape(-1,9)
+        conf_mask = (output[:, 4] >= conf_thre * 1.5).squeeze()
+        output = output[conf_mask].reshape(-1, 9)
         # box4, cls_conf, cls_pred, glide3 == 9
 
         # output[:,5] += 1
@@ -268,79 +276,94 @@ class DetInferModule:
         outputs = self.model.run(None, inputs)[0]
         outputs = torch.from_numpy(outputs)
         outputs = self.decode_outputs(outputs)
-        det_output = self.det_postprocess(outputs, num_classes= 211, \
-                                conf_thre=self.conf_thres, nms_thre=self.nms_thres, class_agnostic=False)
+        det_output = self.det_postprocess(outputs, num_classes=211, \
+                                          conf_thre=self.conf_thres, nms_thre=self.nms_thres, class_agnostic=False)
         img_h, img_w = img.shape[:2]
         outputs = self.convert_out(det_output[0],
                                    ratio,
                                    img_h,
                                    img_w,
                                    conf_thre=self.conf_thres)
-        outputs=self.restrict_output(outputs)
-        self.visualize(img, outputs)
+        outputs = self.restrict_output(outputs)
         return outputs
 
     def restrict_output(self, outputs):
-        cls_list=outputs[:,4]
+        if outputs is None:
+            return None
+        
+        area=(outputs[:,1]-outputs[:,0])*(outputs[:,3]-outputs[:,2])
+        filter_out=outputs[area.argsort()][-1:]
 
-        unique=np.unique(cls_list)
-        filter_list=[]
-        for i in unique:
-            current_result=outputs[outputs[:,4]==i]
-            sorted_result=current_result[current_result[:,5].argsort()]
-            if i in double_list:
-                sorted_result=sorted_result[:2]
-            else:
-                sorted_result=sorted_result[:1]
+        filter_out[:,0]=np.min(outputs[:,0])
+        filter_out[:,1]=np.min(outputs[:,1])
+        filter_out[:,2]=np.max(outputs[:,2])
+        filter_out[:,3]=np.max(outputs[:,3])
+        # cls_list = outputs[:, 4]
 
-            filter_list.append(sorted_result)
+        # unique = np.unique(cls_list)
+        # filter_list = []
+        # for i in unique:
+        #     current_result = outputs[outputs[:, 4] == i]
+        #     sorted_result = current_result[current_result[:, 5].argsort()]
+        #     if i in double_list:
+        #         sorted_result = sorted_result[:2]
+        #     else:
+        #         sorted_result = sorted_result[:1]
 
-        filter_out=np.concatenate(filter_list)
+        #     filter_list.append(sorted_result)
+
+        # filter_out = np.concatenate(filter_list)
         return filter_out
-    def process_batch(self,image_paths):
-        result_list=[]
+
+    def process_batch(self, image_paths):
+        result_list = []
         for image in image_paths:
-            result_list.append(self.process(image))
+            result= self.process(image)
+            result_list.append(result)
         return result_list
-            
-    
+    def visualize_batch(self, image_paths,results,normal_list):
+        plot_list = []
+        for image,result,normal in zip(image_paths,results,normal_list):
+            plot_img=self.visualize(image,result,normal)
+            plot_list.append(plot_img)
+        return plot_list
 
-
-    def visualize(self,image, outputs, save_path="output.png"):
+    def visualize(self, image_path, outputs,normal=True):
+        image=cv2.imread(image_path)
+        if outputs is None:
+            return image
         for output in outputs:
-            x1,y1,x2,y2,cls,score,rotate=output
+            x1, y1, x2, y2, cls, score, rotate = output
 
+            center = ((x1 + x2) / 2, (y1 + y2) / 2)
+            width = x2 - x1
+            height = y2 - y1
+            rect = (center, (width, height), -1 * rotate)
 
-            center=((x1+x2)/2,(y1+y2)/2)   
-            width=x2-x1
-            height=y2-y1
-            rect=(center,(width,height),-1*rotate)
-
-            box=cv2.boxPoints(rect)
-            box=np.intp(box)
-            cls=int(cls)
-            cv2.polylines(image, [box], isClosed=True, color=(0, 200, 0), thickness=2)
-            if cls in det_map["normal"]:
-                cv2.putText(image,det_map["normal"][cls],(int(x1),int(y1)),cv2.FONT_HERSHEY_SIMPLEX,0.5,(0,255,0),1)
-            elif cls in det_map["abnormal"]:
-                cv2.putText(image,det_map["abnormal"][cls],(int(x1),int(y1)),cv2.FONT_HERSHEY_SIMPLEX,0.5,(0,0,255),1)
-            
+            box = cv2.boxPoints(rect)
+            box = np.intp(box)
+            cls = int(cls)
+            # if cls in det_map["normal"]:
+            if normal:
+                cv2.polylines(image, [box], isClosed=True, color=(0, 200, 0), thickness=2)
+                # cv2.putText(image, det_map["normal"][cls], (int(x1), int(y1)), cv2.FONT_HERSHEY_SIMPLEX, 1,
+                #             (0, 255, 0), 2)
+            # elif cls in det_map["abnormal"]:
             else:
-                print(f"cls id :{cls} not in map")
-        
-        if save_path:
-            cv2.imwrite(save_path,image)
-        
+                cv2.polylines(image, [box], isClosed=True, color=(0,0, 200), thickness=2)
+                # cv2.putText(image, det_map["abnormal"][cls], (int(x1), int(y1)), cv2.FONT_HERSHEY_SIMPLEX, 1,
+                #             (0, 0, 200), 2)
+
+            # else:
+            #     print(f"cls id :{cls} not in map")
+
         return image
 
 
-
 # %%
-# det_model= DetInferModule()
-det_map={"normal":{62:"Upper lip(UL)",63:"nose(N)",64:"Lower lip(LL)",65:"chin",61:"nostrils(No)"}, "abnormal":{164:"cleft lip(CL)",163:"cleft alveolar(CA)",166:"cleft palate(CP)",167:"CL_ROI",162:"CLP_ROI"}}
-double_list=[61]
+det_map = {"normal": {62: "Upper lip(UL)", 63: "nose(N)", 64: "Lower lip(LL)", 65: "chin", 61: "nostrils(No)"},
+           "abnormal": {164: "cleft lip(CL)", 163: "cleft alveolar(CA)", 166: "cleft palate(CP)", 167: "CL_ROI",
+                        162: "CLP_ROI"}}
+double_list = [61]
 
 # print(det_model.process('/data/lr/prenatal_project_py/gen/clp_val/patient_level_external/abnormal/cases_30/szslyy-yc-24w-wyq-2-1777_0.png'))
-
-
-
