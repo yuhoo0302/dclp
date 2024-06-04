@@ -73,7 +73,7 @@ class DCLP:
             plot_img = ob.cv2Img_AddChinese(plot_img, "Plane: " + pred[0] + " conf: " + str(round(pred[1], 3)),
                                             (40, 40))
 
-            infor = [k + ": " + result["Diagnosis"][k] for k in result["Diagnosis"].keys()][0]
+            infor = ["Type: " + result["Diagnosis"][k] for k in result["Diagnosis"].keys()][0]
             plot_img = ob.cv2Img_AddChinese(plot_img, infor, (40, 80))
             cv2.imwrite(os.path.basename(p_images[index]),plot_img)
 
@@ -96,7 +96,7 @@ file_ext = ["jpg", "png", "jpeg", "bmp"]
 dclp = DCLP()
 
 
-def detect_and_classify(images_path="/home/weki/clp/test_sample/CL3"):
+def detect_and_classify(images_path="/home/weki/clp/test_sample/CL1"):
     print('begin')
     p_images = os.listdir(images_path)
     p_images = [os.path.join(images_path, item) for item in p_images if item.split(".")[-1] in file_ext]
