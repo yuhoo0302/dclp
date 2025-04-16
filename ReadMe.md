@@ -1,6 +1,6 @@
 # Interface for the CLP
 
-this code contains the interface to diagnose CL (Cleft Lip) and CLP (Cleft Lip and Palate) from normal conditions.
+This code contains the interface to diagnose CL (Cleft Lip) and CLP (Cleft Lip and Palate) from normal conditions.
 
 
 ## 1. Environment
