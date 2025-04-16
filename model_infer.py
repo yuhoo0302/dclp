@@ -44,8 +44,12 @@ def get_model(model_path, is_cuda=True):
 # %% 切面分类模型
 class SpClsInferModule:
     def __init__(self, ) -> None:
-        model_path = "/home/weki/clp/models/cls_cel4.onnx"
-        self.models = get_model(model_path)
+        model_path1 = "/home/weki/clp/models/p626/NC_e4.onnx"
+        model_path2 = "/home/weki/clp/models/p626/CLV_e27.onnx"
+        model_path3 = "/home/weki/clp/models/p626/CAP_e16.onnx"
+        self.models1 = get_model(model_path1)
+        self.models2 = get_model(model_path2)
+        self.models3 = get_model(model_path3)
 
     def center_crop(self, img, output_size):
         """
@@ -90,7 +94,20 @@ class SpClsInferModule:
     def process(self, image_path) -> dict:
         img = cv2.imread(image_path)
         img = self.preprocess(img)
-        outputs = self.models.run(None, {"input": img})
+        outputs = self.models1.run(None, {"input": img})
+        outputs = torch.as_tensor(np.array(outputs), dtype=torch.float32).reshape(-1)  # n
+        outputs = torch.softmax(outputs, dim=0)
+        sp_scores, sp_classes = outputs.topk(1)
+        sp_class=sp_classes.item()
+
+        if sp_class==0: # 12 NLV,CLV
+            outputs=self.models2.run(None,{"input":img})
+        elif sp_class==1:
+            outputs=self.models3.run(None,{"input":img})
+        
+        else:
+            raise KeyError
+
         outputs = torch.as_tensor(np.array(outputs), dtype=torch.float32).reshape(-1)  # n
         outputs = torch.softmax(outputs, dim=0)
         sp_scores, sp_classes = outputs.topk(1)
@@ -119,7 +136,7 @@ cls_map = {0: "NAPV", 1: "NLV", 2: "CLV", 3: "CAPV"}
 # %%
 class DetInferModule:
     def __init__(self, ) -> None:
-        model_path = "/home/weki/clp/models/det_211.onnx"
+        model_path = "/home/weki/clp/models/p626/211_cls_cel4_20240604.onnx"
         self.model = get_model(model_path)
         self.conf_thres = 0.3
         self.nms_thres = 0.3

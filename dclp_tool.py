@@ -26,16 +26,16 @@ class DCLP:
         if exists_BC and exists_SYC:
 
             if "CLV" in cls_list and "CAPV" in cls_list:
-                diagnosis = {"Abnormal": "CLP"}
+                diagnosis = {"Type": "CLP"}
 
             if "CLV" not in cls_list and "CAPV" in cls_list:
-                diagnosis = {"Normal": "Normal"}
+                diagnosis = {"Type": "Normal"}
 
             if "CLV" in cls_list and "CAPV" not in cls_list:
-                diagnosis = {"Abnormal": "CL"}
+                diagnosis = {"Type": "CL"}
 
             if "CLV" not in cls_list and "CAPV" not in cls_list:
-                diagnosis = {"Normal": "Normal"}
+                diagnosis = {"Type": "Normal"}
 
         if exists_BC and not exists_SYC:
             diagnosis = {"Uncertain": "without alveolar&palate view"}
@@ -48,8 +48,7 @@ class DCLP:
         return diagnosis
 
     def convert_normal_planes(self,cls_results):
-        
-        return [i[0]in[0,1]for i in cls_results] # NLV,NAPV
+        return [i[0]in["NLV","NAPV"]for i in cls_results] # NLV,NAPV
     
     def detect_and_classify(self, images_path):
 
@@ -75,7 +74,7 @@ class DCLP:
 
             infor = ["Type: " + result["Diagnosis"][k] for k in result["Diagnosis"].keys()][0]
             plot_img = ob.cv2Img_AddChinese(plot_img, infor, (40, 80))
-            cv2.imwrite(os.path.basename(p_images[index]),plot_img)
+            # cv2.imwrite(os.path.basename(p_images[index]),plot_img)
 
             plot_img_list.append(self.convert2base64(plot_img))
 
@@ -96,7 +95,7 @@ file_ext = ["jpg", "png", "jpeg", "bmp"]
 dclp = DCLP()
 
 
-def detect_and_classify(images_path="/home/weki/clp/test_sample/CL1"):
+def detect_and_classify(images_path="/home/weki/clp/test_sample/Normal2"):
     print('begin')
     p_images = os.listdir(images_path)
     p_images = [os.path.join(images_path, item) for item in p_images if item.split(".")[-1] in file_ext]

@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="ch">
+<head>
+    <meta charset="UTF-8">
+    <title>Result</title>
+    <link rel="stylesheet" href="../static/css/main_page.css?version=-1">
+    <link rel="shortcut icon" href="../static/image/logo.jpg">
+</head>
+<body>
+<header>
+    <h1></h1>
+    <div>
+        <img src="../static/image/szu_logo.png" alt="">
+        <img src="../static/image/hospital_logo.png" alt="">
+        <img src="../static/image/rayshape_logo.png" alt="">
+    </div>
+</header>
+<main>
+    <h2>
+        AIOC model
+    </h2>
+    <div>
+        <div id="main_left">
+            {% for i in range(case_num | length) %}
+                <div class="case_images">
+                    <button class="select_image" id="image_button_{{ i }}">
+                        <img src="../static/temp/{{ i }}/0.png" alt="">
+                        <span class="case_images_text">Case {{ i + 1 }}</span>
+                    </button>
+                </div>
+            {% endfor %}
+            <div id="add_image">
+                <form action="/main_page" method="post" enctype="multipart/form-data">
+                    <label for="file" id="add_image_label">
+                        <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M5 8C5 6.89543 5.89543 6 7 6H19L24 12H41C42.1046 12 43 12.8954 43 14V40C43 41.1046 42.1046 42 41 42H7C5.89543 42 5 41.1046 5 40V8Z"
+                                  fill="none" stroke="#333333" stroke-width="4" stroke-linejoin="round"></path>
+                            <path d="M30 25.9867L24 20L18 26" stroke="#333333" stroke-width="4" stroke-linecap="round"
+                                  stroke-linejoin="round"></path>
+                            <path d="M24 20V34" stroke="#333333" stroke-width="4" stroke-linecap="round"
+                                  stroke-linejoin="round"></path>
+                        </svg>
+                    </label>
+                    <input type="file" name="images" id="file" style="display: none" accept="image/*" multiple>
+                </form>
+            </div>
+        </div>
+        <div id="main_center">
+            <div id="result_image_div">
+                {% for img in images %}
+                    <div class="result_image">
+                        <button class="result_image_button">
+                            <!--base64-->
+                            <img src="data:image/png;base64,{{ img }}" alt="">
+                        </button>
+                    </div>
+                {% endfor %}
+            </div>
+            <label for="submit" id="submit_label">Pred</label>
+            <button id="submit" style="display: none" onclick="window.location.href='./main_page';" disabled></button>
+            <p id="time">{{ time }}</p>
+        </div>
+        <div id="main_right">
+            <div id="result">
+                <div id="result_normal">
+                    <h3 id="result_normal_text">Normal</h3>
+                </div>
+                <div id="result_CL">
+                    <h3 id="result_CL_text">CL</h3>
+                </div>
+                <div id="result_CLP">
+                    <h3 id="result_CLP_text">CLP</h3>
+                </div>
+                <div id="result_uncertain">
+                    <h3 id="result_uncertain_text">Uncertain</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+<div id="image_show">
+    <button id="image_show_close_button" onclick="document.getElementById('image_show').style.display = 'none';">×</button>
+    <div id="image_show_image">
+    </div>
+</div>
+<div id="loading_div" style="display: none;">
+    <div class="loading">
+        <div></div>
+        <div></div>
+        <div></div>
+        <div></div>
+        <div></div>
+        <div></div>
+        <div></div>
+        <div></div>
+    </div>
+    <div class="loading-text">Model is predicting...</div>
+</div>
+<div id="watermark"></div>
+<script>
+    var diagnosis = "{{diagnosis}}";
+    var case_num = {{case_num}};
+</script>
+<script src="https://registry.npmmirror.com/echarts/5.5.0/files/dist/echarts.min.js"></script>
+<script src="../static/js/main_page.js"></script>
+</body>

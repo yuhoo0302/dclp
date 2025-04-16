@@ -4,46 +4,75 @@
     <meta charset="UTF-8">
     <title>Result</title>
     <link rel="stylesheet" href="../static/css/main_page.css?version=-1">
+    <link rel="shortcut icon" href="../static/image/logo.jpg">
 </head>
 <body>
 <header>
     <h1></h1>
     <div>
         <img src="../static/image/szu_logo.png" alt="">
-        <img src="../static/image/hospital_logo.png" alt="">
-        <img src="../static/image/rayshape_logo.png" alt="">
     </div>
 </header>
 <main>
     <h2>
-        CPL Laboratory
+        心脏二尖瓣反流诊断系统
     </h2>
     <div>
         <div id="main_left">
-            {% for i in range(case_num | length) %}
-                <div class="case_images">
-                    <button class="select_image" id="image_button_{{ i }}">
-                        <img src="../static/temp/{{ i }}/0.png" alt="">
-                    </button>
-                </div>
-            {% endfor %}
+            <div class="case_images">
+                <button class="select_image" id="image_button_0">
+                    <img src="../static/temp/0/0.jpeg" alt="">
+                    <span class="case_images_text">Case 1</span>
+                </button>
+            </div>
+                      <div class="case_images">
+                <button class="select_image" id="image_button_1">
+                    <img src="../static/temp/1/0.jpeg" alt="">
+                    <span class="case_images_text">Case 2</span>
+                </button>
+            </div>
+                      <div class="case_images">
+                <button class="select_image" id="image_button_2">
+                    <img src="../static/temp/2/0.jpeg" alt="">
+                    <span class="case_images_text">Case 3</span>
+                </button>
+            </div>
+                      <div class="case_images">
+                <button class="select_image" id="image_button_3">
+                    <img src="../static/temp/3/0.jpeg" alt="">
+                    <span class="case_images_text">Case 4</span>
+                </button>
+            </div>
+                      <div class="case_images">
+                <button class="select_image" id="image_button_4">
+                    <img src="../static/temp/4/0.jpeg" alt="">
+                    <span class="case_images_text">Case 5</span>
+                </button>
+            </div>
             <div id="add_image">
                 <form action="/main_page" method="post" enctype="multipart/form-data">
-                    <label for="file" id="add_image_label">+</label>
+                    <label for="file" id="add_image_label">
+                        <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M5 8C5 6.89543 5.89543 6 7 6H19L24 12H41C42.1046 12 43 12.8954 43 14V40C43 41.1046 42.1046 42 41 42H7C5.89543 42 5 41.1046 5 40V8Z"
+                                  fill="none" stroke="#333333" stroke-width="4" stroke-linejoin="round"></path>
+                            <path d="M30 25.9867L24 20L18 26" stroke="#333333" stroke-width="4" stroke-linecap="round"
+                                  stroke-linejoin="round"></path>
+                            <path d="M24 20V34" stroke="#333333" stroke-width="4" stroke-linecap="round"
+                                  stroke-linejoin="round"></path>
+                        </svg>
+                    </label>
                     <input type="file" name="images" id="file" style="display: none" accept="image/*" multiple>
                 </form>
             </div>
         </div>
         <div id="main_center">
             <div id="result_image_div">
-                {% for img in images %}
-                    <div class="result_image">
-                        <button class="result_image_button">
-                            <!--base64-->
-                            <img src="data:image/png;base64,{{ img }}" alt="">
-                        </button>
-                    </div>
-                {% endfor %}
+                <div class="result_image">
+                        <!--base64-->
+                    <video id="video" style="width: 80%; height: 80%; display: none" controls autoplay loop muted>
+                        <source src="../static/image/4CC.avi" type="video/mp4">
+                    </video>
+                </div>
             </div>
             <label for="submit" id="submit_label">Pred</label>
             <button id="submit" style="display: none" onclick="window.location.href='./main_page';" disabled></button>
@@ -55,13 +84,16 @@
                     <h3 id="result_normal_text">Normal</h3>
                 </div>
                 <div id="result_CL">
-                    <h3 id="result_CL_text">CL</h3>
+                    <h3 id="result_CL_text">MR-grade I</h3>
                 </div>
                 <div id="result_CLP">
-                    <h3 id="result_CLP_text">CLP</h3>
+                    <h3 id="result_CLP_text">MR-grade II</h3>
                 </div>
                 <div id="result_uncertain">
-                    <h3 id="result_uncertain_text">Uncertain</h3>
+                    <h3 id="result_uncertain_text">MR-grade III</h3>
+                </div>
+                <div id="result_1">
+                    <h3 id="result_text1">MR-grade IV</h3>
                 </div>
             </div>
         </div>
@@ -85,7 +117,6 @@
     </div>
     <div class="loading-text">Model is predicting...</div>
 </div>
-<div id="watermark"></div>
 <script>
     var diagnosis = "{{diagnosis}}";
     var case_num = {{case_num}};

@@ -44,7 +44,7 @@ def main_page():
             time_ = 'Time: ' + str(round(end_time - begin_time, 3))
             return render_template('main_page.html', images=result['images'], diagnosis=list(result['Diagnosis'].values())[0], case_num=n, time=time_)
         else:
-            return render_template('main_page.html', images=[], diagnosis=[], case_num=n,time='')
+            return render_template('main_page.html', images=[], diagnosis=[], case_num=n,time='0.68s')
 
 
 @app.route('/app_data', methods=['POST'])

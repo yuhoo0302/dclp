@@ -1,0 +1,9 @@
+# frpc.toml
+serverAddr = "106.53.160.189"
+serverPort = 7000
+
+[[proxies]]
+name = "web"
+type = "http"
+localPort = 4000
+customDomains = ["106.53.160.189"]
