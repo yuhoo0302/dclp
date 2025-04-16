@@ -1,6 +1,6 @@
 # Interface for the CLP
 
-this code contains the interface to diagnose CL (Cleft Lip) and CLP (Cleft Lip and Palate) from normal conditions.
+This code contains the interface to diagnose CL (Cleft Lip) and CLP (Cleft Lip and Palate) from normal conditions.
 
 
 ## 1. Environment
@@ -9,7 +9,7 @@ To activate the environment, run the following command:
 conda activate tc19
 ```
 
-## 2. main inferface Function
+## 2. Main interface Function
 The main interface function is provided in dclp.py.
 
 
